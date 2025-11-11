@@ -1,1 +1,51 @@
-spring.application.name=isossoma-service-quotation
+spring:
+  application:
+    name: isossoma-service-quotation
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/isossoma
+    username: admin
+    password: admin123
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      pool-name: HikariPool-Quotation
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 10000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+      auto-commit: true
+      leak-detection-threshold: 0
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: always
+
+jwt:
+  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970334336763979244226452948404D6351
+  expiration: 86400000        # 24 horas (en milisegundos)
+  refresh-expiration: 604800000  # 7 días (en milisegundos)
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    com.isossoma: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
