@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
-    @Query("SELECT u FROM User u WHERE u.username = :username AND u.deletedAt IS NULL")
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.isActive = true")
     Optional<User> findByUsernameWithRolesAndPermissions(@Param("username") String username);
     Optional<User> findByUsernameAndDeletedAtIsNull(String username);
     Optional<User> findByEmailAndDeletedAtIsNull(String email);

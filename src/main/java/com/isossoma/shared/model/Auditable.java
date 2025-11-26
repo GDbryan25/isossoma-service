@@ -39,4 +39,12 @@ public abstract class Auditable {
     @LastModifiedDate
     @Column(name = "updated_date")
     private LocalDateTime updatedDate;
+
+    @LastModifiedBy
+    @Column(name = "deleted_by")
+    private String deletedBy;
+
+    @LastModifiedDate
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

@@ -13,6 +13,7 @@ import com.isossoma.auth.models.User;
 import com.isossoma.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,17 +68,27 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.username(),
-                        request.password()
-                )
-        );
-
         var user = userRepository.findByUsernameWithRolesAndPermissions(request.username())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.username()));
+
+        boolean matches = passwordEncoder.matches(request.password(), user.getPassword());
+
+        if (!matches) {
+            throw new BadCredentialsException("Password does not match!");
+        }
 
         UserPrincipal userPrincipal = UserPrincipal.create(user);
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.username(),
+                            request.password()
+                    )
+            );
+        } catch (Exception e) {
+            throw e;
+        }
 
         var jwtToken = jwtService.generateToken(userPrincipal);
         var refreshToken = jwtService.generateRefreshToken(userPrincipal);

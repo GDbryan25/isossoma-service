@@ -1,6 +1,7 @@
 package com.isossoma.shared.exception.handlers;
 
 import com.isossoma.shared.dto.ApiResponse;
+import com.isossoma.shared.exception.ConflictException;
 import com.isossoma.shared.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,18 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiResponse> handleConflictException(ConflictException ex) {
+        ApiResponse error = new ApiResponse(
+                false,
+                ex.getMessage(),
+                null,
+                OffsetDateTime.now()
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         ApiResponse error = new ApiResponse(
@@ -39,9 +52,9 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("error", "Bad Request");
-        response.put("validationErrors", errors);
+        response.put("message", HttpStatus.BAD_REQUEST.value());
+        response.put("success", false);
+        response.put("data", errors);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
