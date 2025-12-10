@@ -36,6 +36,7 @@ public class Customer extends Auditable {
     private DocumentType documentType;
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = true)
+    @Builder.Default
     private CustomerStatus customerStatus = CustomerStatus.ACTIVE;
     @Column(nullable = false, unique = true)
     private String documentNumber;

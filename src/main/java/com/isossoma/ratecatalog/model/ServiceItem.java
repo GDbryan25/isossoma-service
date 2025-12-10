@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -26,6 +27,9 @@ public class ServiceItem extends Auditable {
     @Enumerated(EnumType.STRING)
     @Column(name = "parameter_type")
     private ParameterType parameterType;
+    @Column(name = "status", nullable = true)
+    @Builder.Default
+    private RecordStatus status = RecordStatus.ACTIVE;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_category_id")
     private ServiceCategory serviceCategory;
@@ -35,5 +39,6 @@ public class ServiceItem extends Auditable {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
-    private List<ServiceItemSupplier> suppliers;
+    @Builder.Default
+    private List<ServiceItemSupplier> suppliers = new ArrayList<>();
 }

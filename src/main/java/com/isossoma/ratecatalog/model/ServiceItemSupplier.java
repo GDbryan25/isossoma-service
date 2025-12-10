@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.lang.module.FindException;
 import java.math.BigDecimal;
 
 @Getter
@@ -27,6 +26,9 @@ public class ServiceItemSupplier extends Auditable {
     private String methodology;
     private String accreditation;
     private BigDecimal price;
+    @Column(name = "status", nullable = true)
+    @Builder.Default
+    private RecordStatus status = RecordStatus.ACTIVE;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_item_id")
     private ServiceItem serviceItem;

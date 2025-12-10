@@ -1,8 +1,8 @@
 package com.isossoma.ratecatalog.model;
 
+import com.isossoma.customer.models.CustomerStatus;
 import com.isossoma.shared.model.Auditable;
 import jakarta.persistence.*;
-import jdk.dynalink.linker.LinkerServices;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -25,11 +25,15 @@ public class ServiceType extends Auditable {
     private Long id;
     private String code;
     private String description;
+    @Column(name = "status", nullable = true)
+    @Builder.Default
+    private RecordStatus status = RecordStatus.ACTIVE;
     @OneToMany(
             mappedBy = "serviceType",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @Builder.Default
     private List<ServiceCategory> categories =  new ArrayList<>();
 }

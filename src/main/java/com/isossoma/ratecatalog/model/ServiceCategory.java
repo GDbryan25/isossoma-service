@@ -24,6 +24,9 @@ public class ServiceCategory extends Auditable {
     private Long id;
     private String code;
     private String description;
+    @Column(name = "status", nullable = true)
+    @Builder.Default
+    private RecordStatus status = RecordStatus.ACTIVE;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_type_id")
     private ServiceType serviceType;
@@ -33,5 +36,6 @@ public class ServiceCategory extends Auditable {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @Builder.Default
     private List<ServiceItem> items = new ArrayList<>();
 }
