@@ -1,4 +1,4 @@
-package com.isossoma.auth.service;
+package com.isossoma.auth.service.impl;
 
 import com.isossoma.auth.dto.request.AuthenticationRequest;
 import com.isossoma.auth.dto.request.RegisterRequest;

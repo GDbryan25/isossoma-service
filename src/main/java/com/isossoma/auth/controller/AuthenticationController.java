@@ -3,7 +3,7 @@ package com.isossoma.auth.controller;
 import com.isossoma.auth.dto.request.AuthenticationRequest;
 import com.isossoma.auth.dto.request.RegisterRequest;
 import com.isossoma.auth.dto.response.AuthenticationResponse;
-import com.isossoma.auth.service.AuthenticationService;
+import com.isossoma.auth.service.impl.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

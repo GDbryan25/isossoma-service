@@ -1,6 +1,9 @@
 package com.isossoma.auth.repository;
 
+import com.isossoma.auth.dto.response.GetAllUsers;
 import com.isossoma.auth.models.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +21,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailAndDeletedAtIsNull(String email);
     boolean existsByUsernameAndDeletedAtIsNull(String username);
     boolean existsByEmailAndDeletedAtIsNull(String email);
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+    @Query("""
+        SELECT new com.isossoma.auth.dto.response.GetAllUsers(
+            u.id, u.username, u.email, u.isActive, u.isLocked
+        )
+        FROM User u
+    """)
+    Page<GetAllUsers> findAllUsers(Pageable pageable);
 }

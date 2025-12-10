@@ -1,4 +1,4 @@
-package com.isossoma.auth.service;
+package com.isossoma.auth.service.impl;
 
 import com.isossoma.auth.repository.UserRepository;
 import com.isossoma.auth.security.UserPrincipal;
