@@ -1,9 +1,8 @@
 package com.isossoma.auth.service;
 
-import com.isossoma.auth.dto.response.PermissionSimpleResponse;
-
+import com.isossoma.auth.dto.response.permission.PermissionResponse;
 import java.util.List;
 
 public interface PermissionService {
-    List<PermissionSimpleResponse> getAllPermissions();
+    List<PermissionResponse> findAll(String name);
 }

@@ -1,9 +1,10 @@
 package com.isossoma.ratecatalog.dto.request;
 
+import com.isossoma.ratecatalog.enums.ParameterType;
+
 public record UpdateServiceItem(
-        Long id,
-        String code,
         String description,
-        String parameterType,
+        ParameterType parameterType,
+        String note,
         Long serviceCategoryId
 ) {}

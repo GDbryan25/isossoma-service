@@ -1,24 +1,28 @@
 package com.isossoma.customer.mapper;
 
-import com.isossoma.customer.dto.request.SaveCustomerRequest;
+import com.isossoma.customer.dto.request.SaveCustomer;
 import com.isossoma.customer.dto.response.CustomerResponse;
-import com.isossoma.customer.models.Customer;
+import com.isossoma.customer.models.entities.Customer;
+import com.isossoma.customer.models.enums.DocumentType;
+import com.isossoma.customer.models.valueobjects.CustomerInformation;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CustomerMapper {
-    public Customer toCustomerEntity(SaveCustomerRequest createCustomerRequest) {
-        return Customer.builder()
-                .name(createCustomerRequest.name())
-                .address(createCustomerRequest.address())
-                .contact(createCustomerRequest.nameContact())
-                .contactPosition(createCustomerRequest.contactPosition())
-                .email(createCustomerRequest.email())
-                .cellphone(createCustomerRequest.cellphone())
-                .documentType(createCustomerRequest.getDocumentTypeEnum())
-                .documentNumber(createCustomerRequest.documentNumber())
-                .observations(createCustomerRequest.observations())
-                .build();
+    public CustomerInformation toCustomerInformation(SaveCustomer createCustomerRequest) {
+        DocumentType documentType = DocumentType.valueOf(createCustomerRequest.documentType());
+
+        return new CustomerInformation(
+                createCustomerRequest.name(),
+                createCustomerRequest.address(),
+                createCustomerRequest.contactName(),
+                createCustomerRequest.contactPosition(),
+                createCustomerRequest.email(),
+                createCustomerRequest.cellphone(),
+                documentType,
+                createCustomerRequest.documentNumber(),
+                createCustomerRequest.observations()
+        );
     }
 
     public CustomerResponse toCustomerResponse(Customer customer) {

@@ -3,9 +3,9 @@ spring:
     name: isossoma-service-quotation
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/isossoma
-    username: admin
-    password: admin123
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
     hikari:
@@ -20,32 +20,33 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   sql:
     init:
-      mode: always
+      mode: never
 
 jwt:
-  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970334336763979244226452948404D6351
-  expiration: 86400000        # 24 horas (en milisegundos)
-  refresh-expiration: 604800000  # 7 días (en milisegundos)
+  secret-key: ${JWT_SECRET_KEY}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
+
   error:
     include-message: always
     include-binding-errors: always
 
 logging:
   level:
-    com.isossoma: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
+    com.isossoma: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO

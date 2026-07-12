@@ -1,7 +1,7 @@
 package com.isossoma.customer.dto.response;
 
-import com.isossoma.customer.models.CustomerStatus;
-import com.isossoma.customer.models.DocumentType;
+import com.isossoma.customer.models.enums.DocumentType;
+import com.isossoma.shared.model.enums.RecordStatus;
 import lombok.Builder;
 
 @Builder
@@ -14,7 +14,7 @@ public record CustomerResponse(
         String email,
         String cellphone,
         DocumentType documentType,
-        CustomerStatus customerStatus,
+        RecordStatus customerStatus,
         String documentNumber,
         String observations
 ) {}

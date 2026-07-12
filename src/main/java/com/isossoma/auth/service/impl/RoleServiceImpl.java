@@ -1,24 +1,24 @@
 package com.isossoma.auth.service.impl;
 
+import com.isossoma.auth.dto.filters.RolePageableFilters;
 import com.isossoma.auth.dto.request.CreateRoleRequest;
 import com.isossoma.auth.dto.request.UpdateRoleRequest;
-import com.isossoma.auth.dto.response.PermissionResponse;
-import com.isossoma.auth.dto.response.RoleSimpleResponse;
-import com.isossoma.auth.dto.response.RoleWithPermissionsResponse;
-import com.isossoma.auth.models.Permission;
-import com.isossoma.auth.models.Role;
+import com.isossoma.auth.dto.response.permission.PermissionResponse;
+import com.isossoma.auth.dto.response.role.RoleSimpleResponse;
+import com.isossoma.auth.dto.response.role.RoleDetailResponse;
+import com.isossoma.auth.models.entities.Permission;
+import com.isossoma.auth.models.entities.Role;
 import com.isossoma.auth.repository.PermissionRepository;
 import com.isossoma.auth.repository.RoleRepository;
 import com.isossoma.auth.service.RoleService;
-import com.isossoma.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.HashSet;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,102 +29,90 @@ public class RoleServiceImpl implements RoleService {
     private final PermissionRepository permissionRepository;
 
     @Override
-    public void createRole(CreateRoleRequest request) {
-        if (roleRepository.existsByName(request.name())) {
-            throw new IllegalArgumentException("Role name already exists");
+    public RoleSimpleResponse createRole(CreateRoleRequest request) {
+        if(roleRepository.existsByName(request.name())){
+            throw new RuntimeException("Role already exists.");
         }
 
-        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
+        Set<Permission> permissions = getPermissions(request.permissionIds());
 
-        if (permissions.isEmpty()) {
-            throw new IllegalArgumentException("No valid permissions were found");
-        }
+        Role role = new Role(request.name(), request.description(), permissions);
 
-        Role role = Role.builder()
-                .name(request.name())
-                .description(request.description())
-                .permissions(permissions)
-                .build();
+        Role saved = roleRepository.save(role);
 
-        roleRepository.save(role);
+        return new RoleSimpleResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getDescription(),
+                saved.getStatus()
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
-    public RoleWithPermissionsResponse getRoleWithPermissions(Long roleId) {
-
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new NoSuchElementException("Role not found"));
+    public RoleDetailResponse findById(Long roleId) {
+        Role role = roleRepository.findWithPermissionsById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found."));
 
         Set<PermissionResponse> permissions = role.getPermissions()
                 .stream()
-                .map(p -> new PermissionResponse(
-                        p.getId(),
-                        p.getCode(),
-                        p.getDescription(),
-                        p.getIsActive()
+                .map(permission -> new PermissionResponse(
+                        permission.getId(),
+                        permission.getCode(),
+                        permission.getDescription(),
+                        permission.getMenuKey(),
+                        permission.getSubmenuKey(),
+                        permission.getActionKey(),
+                        permission.getRoute(),
+                        permission.getStatus()
                 ))
                 .collect(Collectors.toSet());
 
-        return new RoleWithPermissionsResponse(
+        return new RoleDetailResponse(
                 role.getId(),
                 role.getName(),
                 role.getDescription(),
-                role.getIsActive(),
+                role.getStatus(),
                 permissions
         );
     }
 
     @Override
     @Transactional
-    public void removePermissionFromRole(Long roleId, Long permissionId) {
-
+    public RoleSimpleResponse updateRole(Long roleId, UpdateRoleRequest request) {
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new NoSuchElementException("Role not found"));
+                .orElseThrow(() -> new RuntimeException("Role not found."));
 
-        Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new NoSuchElementException("Permission not found"));
-
-        boolean removed = role.getPermissions().remove(permission);
-
-        if (!removed) {
-            throw new IllegalArgumentException("The role does not contain this permission");
+        if(roleRepository.existsByNameAndIdNot(request.name(), roleId)){
+            throw new RuntimeException("Role name already exists.");
         }
 
-        roleRepository.save(role);
-    }
+        Set<Permission> permissions = getPermissions(request.permissionIds());
 
-    @Override
-    @Transactional
-    public void updateRole(Long roleId, UpdateRoleRequest request) {
+        role.update(request.name(), request.description(), permissions);
 
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new NoSuchElementException("Role not found"));
-
-        if (!role.getName().equalsIgnoreCase(request.name()) &&
-                roleRepository.existsByName(request.name())) {
-            throw new IllegalArgumentException("Role name already exists");
-        }
-
-        role.setName(request.name());
-        role.setDescription(request.description());
-
-        Set<Permission> permissionsToAdd = new HashSet<>(permissionRepository.findAllById(request.permissionIds()));
-
-        role.getPermissions().addAll(permissionsToAdd);
-
-        roleRepository.save(role);
+        return new RoleSimpleResponse(
+                role.getId(),
+                role.getName(),
+                role.getDescription(),
+                role.getStatus()
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RoleSimpleResponse> getRoles(Pageable pageable) {
-        return roleRepository.findAll(pageable)
+    public Page<RoleSimpleResponse> findAll(RolePageableFilters filters) {
+        int page = filters.page() != null ? filters.page() : 0;
+        int size = filters.size() != null ? filters.size() : 10;
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+        return roleRepository.findAll(filters.status(), filters.name(), pageable)
                 .map(role -> new RoleSimpleResponse(
                         role.getId(),
                         role.getName(),
                         role.getDescription(),
-                        role.getIsActive()
+                        role.getStatus()
                 ));
     }
 
@@ -132,12 +120,27 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     public void deleteRole(Long roleId) {
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+                .orElseThrow(() -> new RuntimeException("Role not found."));
 
-        role.getPermissions().clear();
+        role.deactivate();
+    }
 
-        role.setIsActive(false);
+    @Override
+    @Transactional
+    public void reactivateRole(Long roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found."));
 
-        roleRepository.save(role);
+        role.reactivate();
+    }
+
+    private Set<Permission> getPermissions(Set<Long> permissionIds) {
+        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(permissionIds));
+
+        if (permissions.size() != permissionIds.size()) {
+            throw new RuntimeException("One or more permissions do not exist.");
+        }
+
+        return permissions;
     }
 }
