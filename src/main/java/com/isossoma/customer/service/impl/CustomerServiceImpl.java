@@ -1,21 +1,24 @@
 package com.isossoma.customer.service.impl;
 
-import com.isossoma.customer.dto.request.SaveCustomerRequest;
+import com.isossoma.customer.dto.filter.CustomerFilter;
+import com.isossoma.customer.dto.request.SaveCustomer;
 import com.isossoma.customer.dto.response.CustomerResponse;
 import com.isossoma.customer.mapper.CustomerMapper;
-import com.isossoma.customer.models.Customer;
-import com.isossoma.customer.models.DocumentType;
+import com.isossoma.customer.models.entities.Customer;
+import com.isossoma.customer.models.valueobjects.CustomerInformation;
 import com.isossoma.customer.repository.CustomerRepository;
 import com.isossoma.customer.service.CustomerService;
 import com.isossoma.shared.exception.ConflictException;
 import com.isossoma.shared.exception.ResourceNotFoundException;
 import com.isossoma.shared.message.ErrorMessages;
+import com.isossoma.shared.model.enums.RecordStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,56 +27,68 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerMapper mapper;
 
     @Override
-    public CustomerResponse create(SaveCustomerRequest createCustomerRequest) {
-        if(repository.existsByDocumentNumber(createCustomerRequest.documentNumber())) {
+    public CustomerResponse create(SaveCustomer createCustomer) {
+        if(repository.existsByDocumentNumber(createCustomer.documentNumber())) {
             throw new ConflictException(ErrorMessages.CUSTOMER_DOCUMENT_DUPLICATED);
         }
 
-        Customer customer = repository.save(mapper.toCustomerEntity(createCustomerRequest));
+        CustomerInformation customerInformation = mapper.toCustomerInformation(createCustomer);
+
+        Customer customer = repository.save(new Customer(customerInformation));
 
         return mapper.toCustomerResponse(customer);
     }
 
+    @Transactional
     @Override
-    public CustomerResponse update(Long id, SaveCustomerRequest updateCustomerRequest) {
-        if(repository.existsByDocumentNumber(updateCustomerRequest.documentNumber())) {
-            throw new ConflictException(ErrorMessages.CUSTOMER_DOCUMENT_DUPLICATED);
-        }
-
+    public CustomerResponse update(Long id, SaveCustomer updateCustomer) {
         Customer customerFound = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.CUSTOMER_NOT_FOUND));
 
-        setValues(customerFound, updateCustomerRequest);
+        customerFound.update(mapper.toCustomerInformation(updateCustomer));
 
-        Customer customer = repository.save(customerFound);
-
-        return mapper.toCustomerResponse(customer);
+        return mapper.toCustomerResponse(customerFound);
     }
 
+    @Transactional
     @Override
     public Long delete(Long id) {
-        repository.deleteById(id);
+        Customer customerFound = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.CUSTOMER_NOT_FOUND));
+
+        customerFound.deactivate();
+
+        return id;
+    }
+
+    @Transactional
+    @Override
+    public Long reactivate(Long id) {
+        Customer customerFound = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.CUSTOMER_NOT_FOUND));
+
+        customerFound.reactivate();
 
         return id;
     }
 
     @Override
-    public Page<CustomerResponse> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Customer> customers = repository.findAll(pageable);
+    public Page<CustomerResponse> findAll(CustomerFilter filter) {
+        Pageable pageable = PageRequest.of(
+                filter.page(),
+                filter.size(),
+                Sort.by("id").descending()
+        );
 
-        return customers.map(mapper::toCustomerResponse);
+        return repository.findAll(filter.status(), filter.name(), pageable)
+                .map(mapper::toCustomerResponse);
     }
 
-    private void setValues(Customer customer, SaveCustomerRequest customerUpdateRequest) {
-        customer.setName(customerUpdateRequest.name());
-        customer.setAddress(customerUpdateRequest.address());
-        customer.setContact(customerUpdateRequest.nameContact());
-        customer.setContactPosition(customerUpdateRequest.contactPosition());
-        customer.setEmail(customerUpdateRequest.email());
-        customer.setCellphone(customerUpdateRequest.cellphone());
-        customer.setDocumentType(DocumentType.valueOf(customerUpdateRequest.documentType()));
-        customer.setDocumentNumber(customerUpdateRequest.documentNumber());
-        customer.setObservations(customerUpdateRequest.observations());
+    @Override
+    public CustomerResponse findById(Long id) {
+        Customer customer = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.CUSTOMER_NOT_FOUND));
+
+        return mapper.toCustomerResponse(customer);
     }
 }

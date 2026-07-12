@@ -7,7 +7,5 @@ public record UpdateUserRequest(
         String email,
         String firstname,
         String lastname,
-        Boolean isActive,
-        Boolean isLocked,
         Set<Long> roleIds
 ) {}

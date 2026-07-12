@@ -1,82 +1,96 @@
 package com.isossoma.ratecatalog.service.impl;
 
+import com.isossoma.ratecatalog.dto.filters.SupplierFilter;
 import com.isossoma.ratecatalog.dto.request.CreateSupplier;
 import com.isossoma.ratecatalog.dto.request.UpdateSupplier;
-import com.isossoma.ratecatalog.dto.response.GetSupplier;
-import com.isossoma.ratecatalog.model.RecordStatus;
-import com.isossoma.ratecatalog.model.ServiceItem;
-import com.isossoma.ratecatalog.model.ServiceItemSupplier;
-import com.isossoma.ratecatalog.repository.ServiceItemRepository;
-import com.isossoma.ratecatalog.repository.ServiceItemSupplierRepository;
+import com.isossoma.ratecatalog.dto.response.SupplierResponse;
+import com.isossoma.ratecatalog.mapper.SupplierMapper;
+import com.isossoma.ratecatalog.model.ServiceSupplier;
+import com.isossoma.ratecatalog.repository.SupplierRepository;
 import com.isossoma.ratecatalog.service.SupplierService;
+import com.isossoma.shared.exception.ConflictException;
+import com.isossoma.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class SupplierServiceImpl implements SupplierService {
-    private final ServiceItemSupplierRepository supplierRepository;
-    private final ServiceItemRepository serviceItemRepository;
+    private final SupplierRepository repository;
+    private final SupplierMapper mapper;
 
     @Override
     @Transactional
-    public Long create(CreateSupplier dto) {
+    public SupplierResponse create(CreateSupplier createSupplier) {
+        if(repository.existsByName(createSupplier.name())) {
+            throw new ConflictException("Proveedor ya existe");
+        }
 
-        ServiceItem serviceItem = serviceItemRepository.findById(dto.serviceItemId())
-                .orElseThrow(() -> new RuntimeException("ServiceItem not found"));
+        ServiceSupplier supplier = new ServiceSupplier(createSupplier.name(), createSupplier.note());
 
-        ServiceItemSupplier supplier = ServiceItemSupplier.builder()
-                .code(dto.code())
-                .description(dto.description())
-                .methodology(dto.methodology())
-                .accreditation(dto.accreditation())
-                .price(dto.price())
-                .serviceItem(serviceItem)
-                .build();
-
-        supplierRepository.save(supplier);
-        return supplier.getId();
+        return mapper.toSupplierResponse(repository.save(supplier));
     }
 
     @Override
     @Transactional
-    public void update(UpdateSupplier dto) {
+    public SupplierResponse update(Long id, UpdateSupplier updateSupplier) {
+        ServiceSupplier supplier = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el proveedor"));
 
-        ServiceItemSupplier supplier = supplierRepository.findById(dto.id())
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+        supplier.update(updateSupplier.name(), updateSupplier.note());
 
-        supplier.setCode(dto.code());
-        supplier.setDescription(dto.description());
-        supplier.setMethodology(dto.methodology());
-        supplier.setAccreditation(dto.accreditation());
-        supplier.setPrice(dto.price());
-
-        supplierRepository.save(supplier);
+        return mapper.toSupplierResponse(supplier);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        ServiceItemSupplier supplier = supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+        ServiceSupplier supplier = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el proveedor"));
 
-        supplier.setStatus(RecordStatus.INACTIVE);
-        supplierRepository.save(supplier);
+        supplier.deactivate();
+    }
+
+    @Override
+    @Transactional
+    public void reactivate(Long id) {
+        ServiceSupplier supplier = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró el proveedor"));
+
+        supplier.reactivate();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public GetSupplier get(Long id) {
-        return supplierRepository.findSupplierById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+    public SupplierResponse findById(Long id) {
+        ServiceSupplier supplier = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado"));
+
+        return mapper.toSupplierResponse(supplier);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<GetSupplier> getAll(int page, int size) {
-        return supplierRepository.findAllSuppliers(PageRequest.of(page, size));
+    public Page<SupplierResponse> findAll(SupplierFilter filter) {
+        Pageable pageable = PageRequest.of(filter.page(), filter.size(), Sort.by("id").descending());
+
+        Page<ServiceSupplier> suppliers = repository.findAllByFilters(filter.name(), filter.status(), pageable);
+
+        return suppliers.map(mapper::toSupplierResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupplierResponse> findAllNoPaginated() {
+        return repository.findAll(Sort.by("id").descending())
+                .stream()
+                .map(mapper::toSupplierResponse)
+                .toList();
     }
 }
