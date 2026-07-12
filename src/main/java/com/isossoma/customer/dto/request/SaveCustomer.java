@@ -19,11 +19,11 @@ public record SaveCustomer(
         @NotNull(message = "El nombre es obligatorio")
         @NotBlank(message = "El nombre no puede ser vacío")
         @Size(min = 4, message = "El nombre debe tener mínimo 4 carácteres")
-        @Pattern(regexp = "^[A-Za-z]+$", message = "Solo se permiten letras")
+        @Pattern(regexp = "^[A-Za-zÀ-ÿ\\s]+$", message = "Solo se permiten letras")
         String name,
 
         @Size(min = 4, message = "El nombre del contacto debe tener mínimo 4 carácteres")
-        @Pattern(regexp = "^[A-Za-z]+$", message = "Solo se permiten letras")
+        @Pattern(regexp = "^[A-Za-zÀ-ÿ\\s]+$", message = "Solo se permiten letras")
         String contactName,
 
         @Size(min = 4, message = "El cargo del contacto debe tener mínimo 4 carácteres")
